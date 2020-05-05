@@ -10,7 +10,7 @@ from model.DeepLidar import deepLidar
 from model.FuseNet import FuseNet
 from tb_writer import TensorboardWriter
 from training.train import EarlyStop, train_val
-from training.utils import get_depth_and_normal
+from training.utils import get_depth_and_normal, save_attention_map
 from env import SAVED_MODEL_PATH
 
 parser = argparse.ArgumentParser(description='Depth Completion')
@@ -40,11 +40,12 @@ def main_train(model):
     early_stop = EarlyStop(patience=10, mode='min')
 
     # get data loader
-    loader = {'train': get_loader('train', num_data=args.num_data), \
-              'val': get_loader('val', shuffle=False, num_data=1000)}
+    loader = {'train': get_loader('train', num_data=None), \
+              'val': get_loader('val', shuffle=False, num_data=None)}
     
 
     for epoch in range(args.epoch):
+        #save_attention_map(model, testing_rgb, testing_lidar, testing_mask)
         saved_model_path = os.path.join(SAVED_MODEL_PATH, "{}_e{}".format(args.saved_model_name, epoch+1))
         train_losses, val_losses = train_val(model, loader, epoch, DEVICE)
 
