@@ -38,6 +38,7 @@ def test(model, rgb, lidar, mask):
     model = model.to(DEVICE)
     rgb = rgb.to(DEVICE)
     lidar = lidar.to(DEVICE)
+    mask = mask.to(DEVICE)
 
     with torch.no_grad():
         x_global, x_local, global_attn, local_attn = model(rgb, lidar, mask)
