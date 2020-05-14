@@ -17,7 +17,7 @@ def train_val(model, loader, epoch, device):
     """
 
     #model, optimizer, loss_weights = get_optimizer(model)
-    optimizer = optim.Adam(model.parameters(), lr=0.001, betas=(0.9, 0.999))
+    optimizer = optim.Adam(model.parameters(), lr=1e-5, betas=(0.9, 0.999))
     loss_weights = [0.3, 0.3, 0.5]
 
     train_loss, val_loss = [0, 0, 0, 0, 0], [0, 0, 0, 0, 0]
