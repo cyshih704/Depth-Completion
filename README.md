@@ -1,21 +1,4 @@
-# DeepLiDAR (Python3, Pytorch 1.4.0)
-This repository is the implementation for [DeepLiDAR: Deep Surface Normal Guided Depth Prediction for Outdoor Scene from Sparse LiDAR Data and Single Color Image](http://openaccess.thecvf.com/content_CVPR_2019/papers/Qiu_DeepLiDAR_Deep_Surface_Normal_Guided_Depth_Prediction_for_Outdoor_Scene_CVPR_2019_paper.pdf). There are some difference between author's repo and mine.
-
-(1) Rewrite the code referenced from [author's repo](https://github.com/JiaxiongQ/DeepLiDAR) with python3.6 and newest version of pytorch. 
-
-(2) Clarify the structure of KITTI depth completion data
-
-(3) Make it easier to reproduce my result (**not author's result**, because by considering computational resources and time, there are some differences between author's implementation and mine)
- - Reduce model parameters from 143,981,012 to 47,750,544. (Original model is too large to put onto single GPU, author used 3 GeForce GTX 1080 Ti GPUs)
- - Smaller training image (128 x 256). (Author uses 256 x 512)
- - Use less data to train (20000 images). (Author used 85898 images, and it takes about 3 days to train)
- - Slight implementation difference 
-
-(4) I add comments on the code and make it more flexible and readable. 
-
-(5) I add tensorboard visualization for every epoch
-
-
+# Depth Completion from Color Image and Spase Lidar Data
 
 ## Requirements
 * Python 3.6.8
@@ -82,18 +65,6 @@ KITTI_DATASET_PATH = /PATH/TO/KITTI_data/ # path to KITTI_data as structured in 
 PREDICTED_RESULT_DIR = './predicted_dense' # path to save predicted figures (used in test.py)
 ```
 
-
-### To generate **data_depth_normals**
-First, enter **surface-normal/** to build and install library. 
-
-Second, run the following script to generate **data_depth_normals**
-```
-python3 generate_normals.py
-```
-
-## Pretrained Model Download
-See the next section
-
 ## Usage
 
 ### Train and validation
@@ -112,18 +83,6 @@ python3 main.py -b <BATCH_SIZE> -e <EPOCH> -m <SAVED_MODEL_NAME> -l <MODEL_PATH>
     -cpu
         if you want to use CPU to train
 ```
-There are three different stages of training model.
-1. (N) Train surface normal
-2. (D) Train depth of color pathway and normal pathway
-3. (A) Train the whole network (fix surface normal network)
-
-We test the model with 3 different settings
-
-(A) Train N stage for 15 epoch, train D stage for 15 epoch, and then train A stage for 15 epoch ([download](https://drive.google.com/open?id=1q5crzuMye55SwNMMMY5BDc67M4pziGUM))
-
-(B) Train A for 12 epochs (due to early stop with patience 10, no update parameter of deepLidar.normal (random)) ([download](https://drive.google.com/open?id=1uG6p4wuD9CumYz7hhlCOzkKs7Aoeo6GK))
-
-(c) Train A for 10 epochs (update parameter of deepLidar.normal) ([download](https://drive.google.com/open?id=1Mgf1GfryuwS-NIigqSvg0Uxf0JcvuKdr))
 
 
 ### Test
@@ -139,12 +98,6 @@ python3 test.py -m <MODEL_PATH> -n <NUM_DATA> -cpu
     -s
         if you want to save predicted figure in PREDICTED_RESULT_DIR
 ```
-The following results are testing on **depth_selection/val_selection_cropped** data
-|  Setting   | RMSE (mm)  |
-|  ----  | ----  |
-| A ([download](https://drive.google.com/open?id=1q5crzuMye55SwNMMMY5BDc67M4pziGUM)) | 1191.6127 |
-| B ([download](https://drive.google.com/open?id=1uG6p4wuD9CumYz7hhlCOzkKs7Aoeo6GK)) | 1182.6613 |
-| C ([download](https://drive.google.com/open?id=1Mgf1GfryuwS-NIigqSvg0Uxf0JcvuKdr)) | 1026.8722 |
 
 ### Test a pair of inputs
 Run a pair of rgb and lidar image as input, and then save the predicted dense depth
@@ -165,30 +118,4 @@ python3 test_a_pair.py --model_path </PATH/TO/PRETRAIN_MODEL> --rgb <PATH/TO/RGB
 ## Tensorboard Visualization
 ```
 tensorboard --logdir runs/
-```
-
-## Experiment of setting A
-Input data (rgb image, lidar image)
-![image](https://github.com/ChingYenShih/EECS-545-Final/blob/master/final/figure/input.png)
-
-Groundtruth (surface normal, dense depth)
-![image](https://github.com/ChingYenShih/EECS-545-Final/blob/master/final/figure/gt.png)
-
-Masked predicted result (masked surface normal, masked dense depth)
-![image](https://github.com/ChingYenShih/EECS-545-Final/blob/master/final/figure/mask_pred.png)
-
-Predicted result (surface normal, dense depth)
-![image](https://github.com/ChingYenShih/EECS-545-Final/blob/master/final/figure/pred.png)
-
-
-## Citation 
-If you use this method in your work, please cite the following:
-```
-@InProceedings{Qiu_2019_CVPR,
-author = {Qiu, Jiaxiong and Cui, Zhaopeng and Zhang, Yinda and Zhang, Xingdi and Liu, Shuaicheng and Zeng, Bing and Pollefeys, Marc},
-title = {DeepLiDAR: Deep Surface Normal Guided Depth Prediction for Outdoor Scene From Sparse LiDAR Data and Single Color Image},
-booktitle = {The IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
-month = {June},
-year = {2019}
-}
 ```
