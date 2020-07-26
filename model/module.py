@@ -2,6 +2,129 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
+
+class maskBlock(nn.Module):
+    def __init__(self):
+        super(maskBlock, self).__init__()
+        self.mask_block = self.make_layers()
+
+    def make_layers(self):
+        in_channels = 48
+        cfg = [48, 48]
+
+        out_channels = 1
+        layers = []
+
+        for v in cfg:
+            conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1, bias=True)
+            layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
+            in_channels = v
+
+        layers += [nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1, bias=True)]
+        return nn.Sequential(*layers)
+
+    def forward(self, x):
+        return self.mask_block(x)
+
+
+
+class GlobalBlock(nn.Module):
+
+    def __init__(self, in_channel, C):
+        super(GlobalBlock, self).__init__()
+
+        self.conv1 = nn.Conv2d(in_channel, C, kernel_size=3, stride=2, padding=1, bias=True)
+        self.bn1 = nn.BatchNorm2d(C)
+
+        self.conv2 = nn.Conv2d(C, C, kernel_size=3, stride=1, padding=1, bias=True)
+        self.bn2 = nn.BatchNorm2d(C)
+
+        self.conv3 = nn.Conv2d(in_channel, C, kernel_size=3, stride=1, padding=1, bias=True)
+        self.bn3 = nn.BatchNorm2d(C)
+
+        self.conv4 = nn.Conv2d(C, in_channel, kernel_size=3, stride=1, padding=1, bias=True)
+        self.bn4 = nn.BatchNorm2d(in_channel)
+
+        self.relu = nn.ReLU(inplace=True)
+    def forward(self, x):
+        b, c, w, h = x.size()
+
+        # first branch
+        x_1 = self.relu(self.bn3(self.conv3(x)))
+
+        # second branch
+        x_2 = self.relu(self.bn1(self.conv1(x)))
+        x_2 = self.relu(self.bn2(self.conv2(x_2)))
+        x_2 = F.interpolate(x_2, (w, h), mode='bilinear', align_corners=True)
+
+        x_3 = x_1 + x_2
+        x_4 = self.relu(self.bn4(self.conv4(x_3))) + x
+        return x_4
+
+
+class LocalBlock(nn.Module):
+
+    def __init__(self, in_channel, C):
+        super(LocalBlock, self).__init__()
+
+        self.conv_down1 = nn.Conv2d(in_channel, C, kernel_size=3, stride=2, padding=1, bias=True)
+        self.bn_down1 = nn.BatchNorm2d(C)
+        self.conv_down2 = nn.Conv2d(C, C, kernel_size=3, stride=2, padding=1, bias=True)
+        self.bn_down2 = nn.BatchNorm2d(C)
+        self.conv_down3 = nn.Conv2d(C, C, kernel_size=3, stride=2, padding=1, bias=True)
+        self.bn_down3 = nn.BatchNorm2d(C)
+
+        self.conv1 = nn.Conv2d(in_channel, C, kernel_size=3, stride=1, padding=1, bias=True)
+        self.bn1 = nn.BatchNorm2d(C)
+        self.conv2 = nn.Conv2d(C, C, kernel_size=3, stride=1, padding=1, bias=True)
+        self.bn2 = nn.BatchNorm2d(C)
+        self.conv3 = nn.Conv2d(C, C, kernel_size=3, stride=1, padding=1, bias=True)
+        self.bn3 = nn.BatchNorm2d(C)
+        self.conv4 = nn.Conv2d(C, C, kernel_size=3, stride=1, padding=1, bias=True)
+        self.bn4 = nn.BatchNorm2d(C)
+        self.conv5 = nn.Conv2d(C, C, kernel_size=3, stride=1, padding=1, bias=True)
+        self.bn5 = nn.BatchNorm2d(C)
+        self.conv6 = nn.Conv2d(C, C, kernel_size=3, stride=1, padding=1, bias=True)
+        self.bn6 = nn.BatchNorm2d(C)
+        self.conv7 = nn.Conv2d(C, in_channel, kernel_size=3, stride=1, padding=1, bias=True)
+        self.bn7 = nn.BatchNorm2d(in_channel)
+
+
+        self.relu = nn.ReLU(inplace=True)
+    def forward(self, x):
+        b, c, w, h = x.size()
+
+        x0_conv = self.relu(self.bn1(self.conv1(x)))
+
+        x1 = self.relu(self.bn_down1(self.conv_down1(x)))
+        x1_conv = self.relu(self.bn2(self.conv2(x1)))
+
+        x2 = self.relu(self.bn_down2(self.conv_down2(x1)))
+        x2_conv = self.relu(self.bn3(self.conv3(x2)))     
+
+        x3 = self.relu(self.bn_down3(self.conv_down3(x2)))
+        x3_conv = self.relu(self.bn4(self.conv4(x3)))
+
+        b, c, w2, h2 = x2_conv.size()
+        x5 = self.relu(self.bn5(self.conv5(x2_conv + F.interpolate(x3_conv, (w2, h2), mode='bilinear', align_corners=True))))
+
+        b, c, w1, h1 = x1_conv.size()
+        x6 = self.relu(self.bn6(self.conv6(x1_conv + F.interpolate(x5, (w1, h1), mode='bilinear', align_corners=True))))
+        x7 = self.relu(self.bn7(self.conv7(x0_conv + F.interpolate(x6, (w, h), mode='bilinear', align_corners=True))))
+        return x + x7
+        """# first branch
+        x_1 = self.relu(self.bn3(self.conv3(x)))
+
+        # second branch
+        x_2 = self.relu(self.bn1(self.conv1(x)))
+        x_2 = self.relu(self.bn2(self.conv2(x_2)))
+        x_2 = F.interpolate(x_2, (w, h), mode='bilinear', align_corners=True)
+
+        x_3 = x_1 + x_2
+        x_4 = self.relu(self.bn4(self.conv4(x_3))) + x"""
+        return x_4
+
 class ResBlock(nn.Module):
     
     def __init__(self, num_filters, channels_in=None, stride=1, res_option='A', use_dropout=False):
