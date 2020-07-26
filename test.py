@@ -9,6 +9,8 @@ import torch.nn.functional as F
 from PIL import Image
 from training.utils import *
 from env import PREDICTED_RESULT_DIR, KITTI_DATASET_PATH
+from skimage import color
+from model.FuseNet import FuseNet
 
 parser = argparse.ArgumentParser(description='Depth Completion')
 parser.add_argument('-m', '--model_path', help='loaded model path')
@@ -39,13 +41,12 @@ def test(model, rgb, lidar, mask):
     mask = mask.to(DEVICE)
 
     with torch.no_grad():
-        color_path_dense, normal_path_dense, color_attn, normal_attn, surface_normal = model(rgb, lidar, mask, stage='A')
+        x_global, x_local, global_attn, local_attn = model(rgb, lidar, mask)
 
-        predicted_dense, pred_color_path_dense, pred_normal_path_dense = \
-                            get_predicted_depth(color_path_dense, normal_path_dense, color_attn, normal_attn)
- 
+    predicted_dense = get_predicted_depth(x_global, x_local, global_attn, local_attn)
+
         
-        return torch.squeeze(predicted_dense).cpu()
+    return torch.squeeze(predicted_dense).cpu()
 
 def get_testing_img_paths():
     gt_folder = os.path.join(KITTI_DATASET_PATH, 'depth_selection', 'val_selection_cropped', 'groundtruth_depth')
@@ -70,11 +71,12 @@ def main():
     num_testing_image = len(rgb_paths) if args.num_testing_image == -1 else args.num_testing_image
 
     # load model
-    model = deepLidar()
+    model = FuseNet(12)
     dic = torch.load(args.model_path, map_location=DEVICE)
     state_dict = dic["state_dict"]
     model.load_state_dict(state_dict)
     print('Loss of loaded model: {:.4f}'.format(dic['val_loss']))
+    print('The number of model parameters: {}'.format(sum([p.data.nelement() for p in model.parameters()])))
 
 
     transformer = image_transforms()
