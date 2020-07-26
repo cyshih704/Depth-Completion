@@ -1,9 +1,9 @@
 # Depth Completion from Color Image and Spase LiDAR Data
-This project aims to complete depth from color image and sparse LiDAR data. There are local pathway (to extract local features) and global pathway (to extract global features) in the model. In the end of the model, the results from local pathway and global pathway are merged together based on self-learned weight. The detail implementation is [here](https://github.com/ChingYenShih/Depth-Completion/blob/master/report/DepthCompletion.pdf).
+This project aims to complete depth from color image and sparse LiDAR data. There are local pathway (to extract local features) and global pathway (to extract global features) in the model. In the end of the model, the results from local pathway and global pathway are merged together based on self-learned weight. The detail implementation is [here](https://github.com/cyshih704/Depth-Completion/blob/master/report/DepthCompletion.pdf).
 
 
 ## Visualization
-![image](https://github.com/ChingYenShih/Depth-Completion/blob/master/figure/merged.png)
+![image](https://github.com/cyshih704/Depth-Completion/blob/master/figure/merged.png)
 
 
 ## Requirements
