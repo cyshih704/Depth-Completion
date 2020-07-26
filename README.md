@@ -1,4 +1,8 @@
-# Depth Completion from Color Image and Spase Lidar Data
+# Depth Completion from Color Image and Spase LidAR Data
+This project aims to complete depth from color image and sparse LiDAR data. There are local pathway (to extract local features) and global pathway (to extract global features) in the model. In the end of the model, the results from local pathway and global pathway are merged together based on self-learnt weight. The detail implementation is [here](https://github.com/ChingYenShih/Depth-Completion/blob/master/report/DepthCompletion.pdf).
+
+
+## Visualization of Local Pathway and Global Pathway
 
 ## Requirements
 * Python 3.6.8
@@ -119,3 +123,19 @@ python3 test_a_pair.py --model_path </PATH/TO/PRETRAIN_MODEL> --rgb <PATH/TO/RGB
 ```
 tensorboard --logdir runs/
 ```
+
+## Citation 
+```
+@InProceedings{Qiu_2019_CVPR,
+author = {Qiu, Jiaxiong and Cui, Zhaopeng and Zhang, Yinda and Zhang, Xingdi and Liu, Shuaicheng and Zeng, Bing and Pollefeys, Marc},
+title = {DeepLiDAR: Deep Surface Normal Guided Depth Prediction for Outdoor Scene From Sparse LiDAR Data and Single Color Image},
+booktitle = {The IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
+month = {June},
+year = {2019}
+}
+@article{chenlearning,
+  title={Learning Joint 2D-3D Representations for Depth Completion},
+  author={Chen, Yun and Yang, Bin and Liang, Ming and Urtasun, Raquel}
+}
+```
+
