@@ -6,8 +6,7 @@ import torch.optim as optim
 from tqdm import tqdm
 
 from dataloader.dataloader import get_loader
-from model.DeepLidar import deepLidar
-from model.FuseNet import FuseNet
+from model.MergedModel import MergedModel
 from tb_writer import TensorboardWriter
 from training.train import EarlyStop, train_val
 from training.utils import get_depth_and_normal, save_attention_map
@@ -25,24 +24,22 @@ args = parser.parse_args()
 DEVICE = 'cuda' if torch.cuda.is_available() and not args.using_cpu else 'cpu'
 
 
-
-
 def main_train(model):
     # setting tensorboard
     tensorboard_path = 'runs/{}'.format(args.saved_model_name)
     tb_writer = TensorboardWriter(tensorboard_path)
 
-    # get one testing image, used to visualize result in each eopch 
+    # get one testing image, used to visualize result in each eopch
     testing_rgb, testing_lidar, testing_mask, testing_normal = tb_writer.get_testing_img()
-    testing_rgb, testing_lidar, testing_mask, testing_normal = testing_rgb.to(DEVICE), testing_lidar.to(DEVICE), testing_mask.to(DEVICE), testing_normal.to(DEVICE)
+    testing_rgb, testing_lidar, testing_mask, testing_normal = testing_rgb.to(
+        DEVICE), testing_lidar.to(DEVICE), testing_mask.to(DEVICE), testing_normal.to(DEVICE)
 
     # setting early stop, if result doen't improve more than PATIENCE times, stop iteration
     early_stop = EarlyStop(patience=10, mode='min')
 
     # get data loader
-    loader = {'train': get_loader('train', num_data=None), \
+    loader = {'train': get_loader('train', num_data=None),
               'val': get_loader('val', shuffle=False, num_data=None)}
-    
 
     for epoch in range(args.epoch):
         #save_attention_map(model, testing_rgb, testing_lidar, testing_mask)
@@ -57,8 +54,6 @@ def main_train(model):
             break
 
     tb_writer.close()
-
-
 
 
 def main():

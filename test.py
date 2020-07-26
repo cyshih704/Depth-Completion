@@ -4,17 +4,16 @@ import os
 import torch
 import torch.nn as nn
 from dataloader.image_reader import *
-from model.DeepLidar import deepLidar
 import torch.nn.functional as F
 from PIL import Image
 from training.utils import *
 from env import PREDICTED_RESULT_DIR, KITTI_DATASET_PATH
 from skimage import color
-from model.FuseNet import FuseNet
+from model.MergedModel import MergedModel
 
 parser = argparse.ArgumentParser(description='Depth Completion')
 parser.add_argument('-m', '--model_path', help='loaded model path')
-parser.add_argument('-n', '--num_testing_image', type=int, default=10, 
+parser.add_argument('-n', '--num_testing_image', type=int, default=10,
                     help='The number of testing image to be runned')
 parser.add_argument('-cpu', '--using_cpu', action='store_true', help='use cpu')
 parser.add_argument('-s', '--save_fig', action='store_true', help='save predicted result or not')
@@ -22,15 +21,14 @@ parser.add_argument('-s', '--save_fig', action='store_true', help='save predicte
 args = parser.parse_args()
 
 
-
 DEVICE = 'cuda' if torch.cuda.is_available() and not args.using_cpu else 'cpu'
 
 
-
 def rmse(pred, gt):
-    dif = gt[np.where(gt>0)] - pred[np.where(gt>0)]
+    dif = gt[np.where(gt > 0)] - pred[np.where(gt > 0)]
     error = np.sqrt(np.mean(dif**2))
-    return error   
+    return error
+
 
 def test(model, rgb, lidar, mask):
     model.eval()
@@ -45,8 +43,8 @@ def test(model, rgb, lidar, mask):
 
     predicted_dense = get_predicted_depth(x_global, x_local, global_attn, local_attn)
 
-        
     return torch.squeeze(predicted_dense).cpu()
+
 
 def get_testing_img_paths():
     gt_folder = os.path.join(KITTI_DATASET_PATH, 'depth_selection', 'val_selection_cropped', 'groundtruth_depth')
@@ -63,6 +61,7 @@ def get_testing_img_paths():
 
     return rgb_paths, lidar_paths, gt_paths
 
+
 def main():
     # get image paths
     rgb_paths, lidar_paths, gt_paths = get_testing_img_paths()
@@ -71,13 +70,12 @@ def main():
     num_testing_image = len(rgb_paths) if args.num_testing_image == -1 else args.num_testing_image
 
     # load model
-    model = FuseNet(12)
+    model = MergedModel(12)
     dic = torch.load(args.model_path, map_location=DEVICE)
     state_dict = dic["state_dict"]
     model.load_state_dict(state_dict)
     print('Loss of loaded model: {:.4f}'.format(dic['val_loss']))
     print('The number of model parameters: {}'.format(sum([p.data.nelement() for p in model.parameters()])))
-
 
     transformer = image_transforms()
     pbar = tqdm(range(num_testing_image))
@@ -85,14 +83,14 @@ def main():
 
     for idx in pbar:
         # read image
-        rgb = read_rgb(rgb_paths[idx]) # h x w x 3
-        lidar, mask = read_lidar(lidar_paths[idx]) # h x w x 1
-        gt = read_gt(gt_paths[idx]) # h x w x 1
+        rgb = read_rgb(rgb_paths[idx])  # h x w x 3
+        lidar, mask = read_lidar(lidar_paths[idx])  # h x w x 1
+        gt = read_gt(gt_paths[idx])  # h x w x 1
 
         # transform numpy to tensor and add batch dimension
         rgb = transformer(rgb).unsqueeze(0)
         lidar, mask = transformer(lidar).unsqueeze(0), transformer(mask).unsqueeze(0)
-        
+
         # saved file path
         fn = os.path.basename(rgb_paths[idx])
         saved_path = os.path.join(PREDICTED_RESULT_DIR, fn)
